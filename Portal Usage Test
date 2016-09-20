@@ -153,3 +153,5 @@ left join closeouts cls on cls.vendor_id = v.id
 where [v.name=Vendor]
 
 order by 2 desc nulls last
+
+
