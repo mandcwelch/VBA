@@ -1,0 +1,121 @@
+-- Drive Start
+-- No driver location data for these.  Assuming en_route only selected by driver since it does not activate a todo and totals much less then trip count and timing of event places them before onsite time.
+
+with start_time as (
+  select 
+  reservation_id
+  , True as Done
+  from reservation_events re 
+where [re.created_at=daterange]
+and action = 'en_route'),
+
+
+--Driver Onsites
+
+driver_onsite as (
+  select 
+  dl.reservation_id
+  , True as Done
+  from driver_locations dl 
+join reservation_events re on re.id = dl.reservation_event_id
+where [dl.created_at=daterange]
+and action = 'driver_onsite'),
+
+
+--Passenger Onboard
+
+onboard as (
+  
+  select dl.reservation_id 
+  , True as Done
+  from driver_locations dl 
+
+join reservation_events re on re.id = dl.reservation_event_id
+
+where [dl.created_at=daterange]
+and action = 'pickup_passenger'),
+
+
+
+
+-- Passenger Dropped
+
+dropped as (
+  
+select dl.reservation_id 
+  , True as Done  
+  from driver_locations dl 
+
+join reservation_events re on re.id = dl.reservation_event_id
+
+where [dl.created_at=daterange]
+and action = 'drop_passenger'),
+
+
+
+-- Complete Trip
+
+complete as (
+  
+select dl.reservation_id 
+  , True as Done
+  from driver_locations dl 
+
+join reservation_events re on re.id = dl.reservation_event_id
+
+where [dl.created_at=daterange]
+and action = 'complete_trip'),
+
+
+-- LastTime (Selects the latest version of the reservation)
+
+LastTime as (select va2.reservation_id as reservation_id, vendor_id from vendor_assignments va2
+join (
+       select reservation_id, max(created_at) as LastDate
+       from vendor_assignments
+       group by reservation_id) ddt
+  on va2.reservation_id = ddt.reservation_id and va2.created_at = ddt.LastDate 
+  where [ddt.LastDate=daterange])
+
+
+
+select
+   '[' || v.name || '](https://core.savoya.net/#/savoya/vendors/' || v.id || ')' as Vendor
+  ,va.vendor_id
+  , d.first_name || ' ' || d.last_name  as Driver
+  , '[' || va.reservation_id || '](https://core.savoya.net/#/savoya/reservations/' || va.reservation_id || ')'as       "Reservation Number"
+  , va.confirmation_number as "Confirmation Number"
+  , coalesce(str.done,false) as "Start"
+  , coalesce(dro.done,false) as Onsite
+  , coalesce(ob.done,false) as POB
+  , coalesce(drps.done,false) as "Dropped"
+  , coalesce(cmp.done,false) as "Complete"
+ 
+ from vendor_assignments va
+
+ join reservation_statuses rs on rs.reservation_id = va.reservation_id 
+ right join LastTime lt on lt.vendor_id = va.vendor_id and lt.reservation_id = va.reservation_id
+
+ left join vendors v on v.id = va.vendor_id
+ left join drivers d on d.id = va.driver_id
+ 
+
+
+ left join start_time str on str.reservation_id = va.reservation_id
+ left join driver_onsite dro on dro.reservation_id = va.reservation_id
+ left join onboard ob on ob.reservation_id = va.reservation_id
+ left join dropped drps on drps.reservation_id = va.reservation_id
+ left join complete cmp on cmp.reservation_id = va.reservation_id
+
+ where [va.created_at = daterange]
+ and [v.name=Vendor]
+ and d.first_name is not null
+ and (rs.status = 'billed' 
+      or rs.status = 'passenger_dropped' 
+      or rs.status = 'paid' 
+      or rs.status = 'billable' 
+      or rs.status = 'finalized')
+      
+group by 3,1,2,4,5,6,7,8,9,10
+
+order by 1,3
