@@ -1,0 +1,16 @@
+select 
+  '[' || first_name || ' ' || last_name || '](https://core.savoya.net/#/savoya/travel-coordination-profiles/' || t.id ||'/edit)' as "Meeting Planner"
+  , '[' || r.id || '](https://core.savoya.net/#/savoya/reservations/' || r.id || ')' as Reservation
+  , '[' || group_id || '](https://core.savoya.net/#/savoya/groups/' || group_id || ')' as "Group ID"
+  , cast(pickup_date as date) as Date
+  ,description as Case_Notes
+
+from reservations r 
+
+join  reservation_cases rc on r.id = rc.reservation_id
+join groups g on g.id = r.group_id
+join travel_coordination_profiles t on t.id = g.travel_coordination_profile_id
+
+where group_id is not null and [pickup_date=daterange]
+
+order by 3,2,1
