@@ -1,0 +1,81 @@
+with closed as (
+  select count(*) as "Count"
+  , case to_char([t.updated_at:hcst:hour], 'HH24') 
+  when '00' then 0
+  when '01' then 1
+  when '02' then 2
+  when '03' then 3
+  when '04' then 4
+  when '05' then 5
+  when '06' then 6
+  when '07' then 7
+  when '08' then 8
+  when '09' then 9
+  when '10' then 10
+  when '11' then 11
+  when '12' then 12
+  when '13' then 13
+  when '14' then 14
+  when '15' then 15
+  when '16' then 16
+  when '17' then 17
+  when '18' then 18
+  when '19' then 19
+  when '20' then 20
+  when '21' then 21
+  when '22' then 22
+  when '23' then 23
+  end as "Hour"
+  , to_char([t.updated_at:hcst]-4, 'D') as "Daynum"
+  , to_char([t.updated_at:hcst]-4, 'day') as "Day"
+  from zendesk.tickets t
+  join zendesk.users u on u.id = t.assignee_id ::varchar(10)
+  where  role = 'agent' and status = 'closed' and [t.requester_id=zendesk_client] and [t.group_id=zendesk_group] and [u.id=zendesk_user]
+  group by 2,3,4
+),
+
+
+solved as (  
+  select count(*) as "Count"
+  , case to_char([t.updated_at:hcst:hour], 'HH24') 
+  when '00' then 0
+  when '01' then 1
+  when '02' then 2
+  when '03' then 3
+  when '04' then 4
+  when '05' then 5
+  when '06' then 6
+  when '07' then 7
+  when '08' then 8
+  when '09' then 9
+  when '10' then 10
+  when '11' then 11
+  when '12' then 12
+  when '13' then 13
+  when '14' then 14
+  when '15' then 15
+  when '16' then 16
+  when '17' then 17
+  when '18' then 18
+  when '19' then 19
+  when '20' then 20
+  when '21' then 21
+  when '22' then 22
+  when '23' then 23
+  end as "Hour"
+  , to_char([t.updated_at:hcst], 'D') as "Daynum" 
+  , to_char([t.updated_at:hcst], 'day') as "Day" 
+  from zendesk.tickets t
+  join zendesk.users u on u.id = t.assignee_id ::varchar(10)
+  where  role = 'agent' and status = 'solved' and [t.requester_id=zendesk_client] and [t.group_id=zendesk_group] and [u.id=zendesk_user]
+  group by 2,3,4
+)
+
+
+select * from solved
+
+union
+
+select * from closed
+
+order by "Hour" desc, "daynum"
