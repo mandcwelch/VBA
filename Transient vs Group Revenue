@@ -1,0 +1,85 @@
+select 
+
+(select
+
+  sum(margin_charge)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Transient Charge"
+
+
+,(select
+  
+  sum(margin_cost)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Transient Cost"
+
+,(select
+  
+  Sum(margin_charge)-sum(margin_cost)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is null and r.pickup_date > current_date - 60/*[r.pickup_date = daterange]*/) as "Transient Difference"
+
+,(select
+  
+  1 - sum(margin_cost)/sum(margin_charge)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Transient Margin"
+
+,(select
+
+  sum(margin_charge)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is not null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Groups Charge"
+
+
+,(select
+  
+  sum(margin_cost)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is not null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Group Cost"
+
+,(select
+  
+  Sum(margin_charge)-sum(margin_cost)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is not null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Group Difference"
+
+,(select
+  
+  1 - sum(margin_cost)/sum(margin_charge)
+
+  from rp_reservation_margins m
+
+  join rp_reservations r on m.id = r.id
+
+  where r.group_id is not null and r.pickup_date > current_date - 60 /*[r.pickup_date = daterange]*/) as "Group Margin"
+
+limit 10000
