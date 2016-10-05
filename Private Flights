@@ -1,0 +1,8 @@
+select r.id as Reservation_ID, c.name as Company, r.local_pickup_date as Local_Pickup_Day, r.local_pickup_time as Local__Pickup_Time, r.savoya_pickup_date + r.savoya_pickup_time as Savoya_Time, v.name as Vendor, r.Pickup as Pickup, r.dropoff as Dropoff, vt.name as Vehicle  from rp_reservations as r 
+
+left join vendors as v on r.vendor_id = v.id
+left join companies as c on r.company_id = c.id
+left join vehicle_types as vt on r.vehicle_type_id = vt.id
+where business_segment = 'private_air'
+and savoya_pickup_date>= current_date
+order by savoya_time asc
