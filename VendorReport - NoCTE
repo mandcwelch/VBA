@@ -1,0 +1,73 @@
+select 
+
+name as Vendor
+,count(r.id) + count(a.auditable_id) as "Trips Sent"
+
+,count(r.id) as "Accepted"
+
+,count(a.auditable_id) as "Rejected"
+
+,count(reservation_id) as "Cases"
+
+,count(reservation_id)*1.0/(count(r.id))*1.0  as "Case Percentage"
+
+,count(ab.auditable_id) as "Online Accepted"
+
+,count(r.id) - count(ab.auditable_id) as "Savoya Accepted"
+
+
+from rp_reservations r
+
+-- join for name --
+
+join vendors v on r.vendor_id = v.id
+
+-- join for rejected --
+
+left join (select 
+           
+           auditable_id, 
+           
+           case
+           
+           when right(audited_changes,9) like ':%' then cast(left(right(audited_changes,7),6) as integer)
+            
+           else cast(left(right(audited_changes,9),8) as integer)
+
+           end as res_id
+           
+           from audits
+           where auditable_type like 'ReservationEvent' 
+           and audited_changes like '%garage_reject%') 
+
+           a on r.id = a.res_id
+
+-- join for cases --
+
+left join (select reservation_id from reservation_cases
+where vendor_fault = 't' and compensation_percentage <> 0) c on r.id = reservation_id
+
+-- join for online accepted --
+
+left join (select 
+           
+           auditable_id,
+           case
+           
+           when right(audited_changes,9) like ':%' then cast(left(right(audited_changes,7),6) as integer)
+            
+           else cast(left(right(audited_changes,9),8) as integer)
+
+           end as res_id
+           from audits
+           where auditable_type like 'ReservationEvent' 
+           and audited_changes like '%confirm%'
+           and user_id in (select user_id from vendor_users)) 
+            
+           ab on r.id = ab.res_id
+
+where [r.pickup_date = daterange]
+
+group by name
+
+Order by 2 desc
