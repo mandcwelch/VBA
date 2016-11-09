@@ -1,0 +1,130 @@
+with rez_pax as (
+  
+  select distinct
+  r.reservation_id
+  --,string_agg(p.first_name|| ' ' || p.last_name, ', ') as passengers
+  from reservation_passengers r
+  join passengers p on r.passenger_id = p.id
+  
+  where deleted_at is null
+  
+  group by 1
+
+),
+
+rez_stops as (
+  
+  select
+  
+  reservation_id
+  ,count(*) as stops
+  from stops 
+  where location_type = 'stop_location'
+  and deleted_at is null
+  
+  group by 1
+  order by 2
+  
+),
+
+rez_alt_loc as (
+  
+  select 
+  
+  s.reservation_id
+  ,s.location_type
+  , case when iata_code is not null then iata_code
+    when iata_code is null and l.name is not null then l.name
+    else 'Location Unavailable' 
+    end as name
+  
+  from locations l
+
+  join stops s on s.location_id = l.id
+  
+  )
+  
+select 
+
+r.id as Reservation
+
+,to_char(r.pickup_date, 'MM/DD/YY') as Date
+
+,tc.first_name || ' ' || tc.last_name as "Travel Coordinator"
+
+--,p.passengers
+
+,sa.name as "Service Area"
+
+,v.name as Vehicle
+
+,case 
+when pu.name is null and pu.address is null then rlp.name 
+else pu.name
+end as "Pickup Location"
+
+,pu.address as "Pickup Address"
+
+,case
+when doff.name is null and doff.address is null then rld.name
+else doff.name
+end as "Dropoff Location"
+
+,doff.address as "Dropoff Address"
+
+,rst.stops as Stops
+
+,case 
+when final_amount is null then [ora_2016].total_charge
+else (final_amount/100*1.0) 
+end as "Client Charge"
+
+,case 
+when final_amount is null then ([ora_2016].total_charge*.9)
+else ((final_amount/100*1.0))*.9 
+end as "With Commission"
+
+,case
+when calculated_total_cost is null then [ora_2016].total_cost
+else (calculated_total_cost*1.0/100)
+end as "Vendor Cost"
+
+,case 
+when calculated_total_cost is null and final_amount is null then 
+(([ora_2016].total_charge*.9) -[ora_2016].total_cost)
+
+when calculated_total_cost is null and final_amount is not null then (((final_amount*.9)/100)-[ora_2016].total_cost)
+
+when calculated_total_cost is not null and final_amount is null then 
+(([ora_2016].total_charge*.9)-(calculated_total_cost/100))
+
+when calculated_total_cost is not null and final_amount is not null then 
+(((final_amount*.9)-calculated_total_cost)/100)
+
+end as "Profit"
+
+
+from reservations r
+
+left join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+left join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+left join companies c on c.id = tc.company_id
+left join rez_pax p on p.reservation_id = r.id
+left join service_areas sa on sa.id = r.service_area_id
+left join vehicle_types v on v.id = r.vehicle_type_id
+left join stops pu on pu.reservation_id =r.id and pu.location_type = 'pickup_location'
+left join stops doff on doff.reservation_id =r.id and doff.location_type = 'dropoff_location'
+left join rez_stops rst on rst.reservation_id = r.id
+left join rez_alt_loc rlp on rlp.reservation_id = r.id and rlp.location_type = 'pickup_location'
+left join rez_alt_loc rld on rld.reservation_id = r.id and rld.location_type = 'dropoff_location'
+left join [ora_2016]  on [ora_2016].REZ_ID = r.id
+
+
+join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+
+
+where r.pickup_date >= '1/1/16' and c.id = 10156792 and [r.pickup_date:hcst=daterange] 
+
+order by r.pickup_date
+/*
+select * from reservations where id = 75295686*/
