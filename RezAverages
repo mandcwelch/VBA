@@ -1,0 +1,20 @@
+select  distinct
+
+count(id) as todo
+,count(id)/count(distinct to_char(resolved_at, 'WW')) as weekly
+,to_char(resolved_at, 'Day') as "day"
+,count(distinct to_char(resolved_at, 'WW'))  
+       from todos
+
+where resolved_at is not null
+
+group by 3
+
+/*
+select 
+
+count(distinct to_char(resolved_at, 'WW'))
+
+from todos
+
+where [resolved_at=daterange]*/
