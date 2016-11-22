@@ -1,0 +1,30 @@
+select 
+
+v.name
+,sum(old_margin_charge)::money as Income
+,sum(old_margin_cost)::money as Cost
+,(sum(old_margin_charge) - sum(old_margin_cost))::money as Return
+,case 
+when sum(old_margin_charge) > 0 then ((sum(old_margin_charge) - sum(old_margin_cost)) / sum(old_margin_charge) )
+                                       else 0
+                                       end
+as Margin   
+
+/*,count(r.id) as Trips
+,(sum(old_margin_cost)::money)/count(r.id) as Average_Cost_Per_Trip
+,(sum(old_margin_charge)::money)/count(r.id) as Average_Client_Charge_Per_Trip
+,((sum(old_margin_charge) - sum(old_margin_cost))::money)/count(r.id) as Average_Return_Per_Trip
+*/
+
+from rp_reservation_margins rm
+
+join rp_reservations r on rm.id = r.id
+join vendors v on r.vendor_id = v.id
+
+where [r.pickup_date = daterange]
+
+group by v.name
+
+
+order by 3 desc
+limit 40
