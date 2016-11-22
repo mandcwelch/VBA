@@ -1,0 +1,26 @@
+select 
+
+c.name
+,sum(old_margin_charge)::money as Income
+,sum(old_margin_cost)::money as Cost
+,(sum(old_margin_charge) - sum(old_margin_cost))::money as Return
+,case 
+when sum(old_margin_charge) > 0 then ((sum(old_margin_charge) - sum(old_margin_cost)) / sum(old_margin_charge) )
+                                       else 0
+                                       end
+
+as Margin                                                             
+
+
+from rp_reservation_margins rm
+
+join rp_reservations r on rm.id = r.id
+join companies c on r.company_id = c.id
+
+where [r.pickup_date=daterange]
+
+group by c.name
+
+
+order by 4 desc
+limit 20
