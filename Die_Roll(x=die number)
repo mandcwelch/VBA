@@ -1,0 +1,3 @@
+>> def die_roll(x)
+>> (1..x).to_a.shuffle[0]
+>> end
