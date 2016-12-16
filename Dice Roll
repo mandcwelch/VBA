@@ -1,0 +1,6 @@
+select
+distinct
+num
+,count( num) from [num_test]
+
+group by 1
