@@ -1,0 +1,588 @@
+with "2015_rez_count" as (
+  
+  select 
+distinct
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(r.id) as trips
+
+   
+  from reservations r 
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  where to_char ( r.pickup_date, 'yyyy') = '2015'
+  
+  group by 1
+  ),
+
+
+"2016_rez_count" as (
+  
+  select 
+distinct
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(r.id) as trips
+
+   
+  from reservations r 
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  where to_char ( r.pickup_date, 'yyyy') = '2016'
+  
+  group by 1
+  ),
+
+"2015_group_count" as (
+  
+  select 
+distinct
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(r.id) as trips
+
+   
+  from reservations r 
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  where to_char ( r.pickup_date, 'yyyy') = '2015' and group_id is not null
+  
+  group by 1  
+  ),
+
+
+"2016_group_count" as (
+  
+  select 
+distinct
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(r.id) as trips
+
+   
+  from reservations r 
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  where to_char ( r.pickup_date, 'yyyy') = '2016' and group_id is not null
+  
+  group by 1 
+  ),
+
+
+"2015_pax_count" as (
+  
+  select 
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(rp.id) + sum(guests) as pax
+
+   
+  from reservation_passengers rp
+  join reservations r on r.id = rp.reservation_id
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  where to_char ( r.pickup_date, 'yyyy') = '2015' and rp.deleted_at is null
+  
+  group by 1
+  ),
+
+
+"2016_pax_count" as (
+  
+  select 
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(rp.id) + sum(guests) as pax
+
+   
+  from reservation_passengers rp
+  join reservations r on r.id = rp.reservation_id
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  where to_char ( r.pickup_date, 'yyyy') = '2016' and rp.deleted_at is null 
+  
+  group by 1
+  ),
+
+"2015_rez_cost" as (
+  
+  select 
+distinct
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(r.id) as trips
+  ,sum(final_amount) as charge
+  ,sum(calculated_total_cost) as cost
+   
+  from reservations r 
+ 
+  where to_char ( r.pickup_date, 'yyyy') = '2015'
+  
+  group by 1
+  ),
+  
+
+"2016_rez_cost" as (
+  
+  select 
+distinct
+  to_char ( r.pickup_date, 'Month') as Month
+  ,count(r.id) as trips
+  ,sum(final_amount) as charge
+  ,sum(calculated_total_cost) as cost
+  
+  from reservations r 
+  where to_char ( r.pickup_date, 'yyyy') = '2016'
+  
+  group by 1
+  ),
+
+rez_veh as (
+  
+  select 
+  id
+  ,vehicle_type_id
+  from reservations
+  
+  ),
+
+"2015_Veh" as (
+
+select 
+  
+   to_char ( r.pickup_date, 'Month') as Month
+  ,count(sedan.id) as Sedan
+  ,count(suv.id) as SUV
+  ,count(van.id) as van
+  ,count(bus.id) as bus
+  ,count(greet.id) as greet
+  ,count(spc.id) as spc
+  ,count(ada.id) as ada
+  
+  from reservations r
+  
+  left join rez_veh sedan on sedan.id= r.id
+            and sedan.vehicle_type_id in (1,10,14,15,19,20,22,142,143)
+  left join rez_veh SUV on SUV.id= r.id 
+            and SUV.vehicle_type_id in (8,11,21)
+  left join rez_veh van on van.id= r.id
+            and van.vehicle_type_id in (5,16,17,18,25,26)
+  left join rez_veh bus on bus.id= r.id
+            and bus.vehicle_type_id in (6,7,145,146,147,148,149,150,151,183,184,185,186,187,188,189,190,191)
+  left join rez_veh greet on greet.id= r.id
+            and greet.vehicle_type_id in (12,13)
+  left join rez_veh spc on spc.id= r.id
+            and spc.vehicle_type_id in (2,3,4,24,144,192,193,194,195)
+  left join rez_veh ada on ada.id= r.id
+            and ada.vehicle_type_id in (196)
+  
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  
+  where to_char ( r.pickup_date, 'yyyy') = '2015'
+  group by 1
+  
+  ),
+
+"2016_Veh" as (
+
+select 
+  
+   to_char ( r.pickup_date, 'Month') as Month
+  ,count(sedan.id) as Sedan
+  ,count(suv.id) as SUV
+  ,count(van.id) as van
+  ,count(bus.id) as bus
+  ,count(greet.id) as greet
+  ,count(spc.id) as spc
+  ,count(ada.id) as ada
+  
+  from reservations r
+  
+  left join rez_veh sedan on sedan.id= r.id
+            and sedan.vehicle_type_id in (1,10,14,15,19,20,22,142,143)
+  left join rez_veh SUV on SUV.id= r.id 
+            and SUV.vehicle_type_id in (8,11,21)
+  left join rez_veh van on van.id= r.id
+            and van.vehicle_type_id in (5,16,17,18,25,26)
+  left join rez_veh bus on bus.id= r.id
+            and bus.vehicle_type_id in (6,7,145,146,147,148,149,150,151,183,184,185,186,187,188,189,190,191)
+  left join rez_veh greet on greet.id= r.id
+            and greet.vehicle_type_id in (12,13)
+  left join rez_veh spc on spc.id= r.id
+            and spc.vehicle_type_id in (2,3,4,24,144,192,193,194,195)
+  left join rez_veh ada on ada.id= r.id
+            and ada.vehicle_type_id in (196)
+  
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f'
+  
+  where to_char ( r.pickup_date, 'yyyy') = '2016'
+  group by 1
+  
+  ),
+
+"2015_int_rez" as (
+  
+  select 
+to_char(r.pickup_date, 'Month') as month
+,count(r.id) as trips
+
+from reservations r
+join reservation_statuses rs on rs.reservation_id =r.id and canceled = 'f'
+join stops s on s.reservation_id = r.id and s.location_type = 'pickup_location'
+join locations l on l.id = s.location_id and l.admin1_code is null
+
+where to_char(r.pickup_date, 'yyyy') = '2015'
+
+group by 1
+  ),
+
+"2016_int_rez" as (
+  select 
+to_char(r.pickup_date, 'Month') as month
+,count(r.id) as trips
+
+from reservations r
+join reservation_statuses rs on rs.reservation_id =r.id and canceled = 'f'
+join stops s on s.reservation_id = r.id and s.location_type = 'pickup_location'
+join locations l on l.id = s.location_id and l.admin1_code is null
+  
+where to_char(r.pickup_date, 'yyyy') = '2016'
+
+group by 1
+),
+
+"2015_companies" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct c.id) as companies
+
+from reservations r 
+join reservation_statuses rs on rs.reservation_id = r.id
+join travel_coordination_profile_assignments tcpa on tcpa.reservation_id = r.id
+join travel_coordination_profiles tcp on tcp.id = tcpa.travel_coordination_profile_id
+join companies c on c.id = tcp.company_id
+
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1
+),
+
+"2016_companies" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct c.id) as companies
+
+from reservations r 
+join reservation_statuses rs on rs.reservation_id = r.id
+join travel_coordination_profile_assignments tcpa on tcpa.reservation_id = r.id
+join travel_coordination_profiles tcp on tcp.id = tcpa.travel_coordination_profile_id
+join companies c on c.id = tcp.company_id
+
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1
+),
+
+"2015_tc" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct tcp.id) as tcs
+
+
+from reservations r 
+join reservation_statuses rs on rs.reservation_id = r.id
+join travel_coordination_profile_assignments tcpa on tcpa.reservation_id = r.id
+join travel_coordination_profiles tcp on tcp.id = tcpa.travel_coordination_profile_id
+
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1
+),
+
+"2016_tc" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct tcp.id) as tcs
+
+
+from reservations r 
+join reservation_statuses rs on rs.reservation_id = r.id
+join travel_coordination_profile_assignments tcpa on tcpa.reservation_id = r.id
+join travel_coordination_profiles tcp on tcp.id = tcpa.travel_coordination_profile_id
+
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1
+),
+
+"2015_vendors" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct va.vendor_id) as vendors
+
+
+from reservations r 
+join vendor_assignments va on va.reservation_id = r.id and current = 't'
+
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1
+),
+
+"2016_vendors" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct va.vendor_id) as vendors
+
+
+from reservations r 
+join vendor_assignments va on va.reservation_id = r.id and current = 't'
+
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1
+),
+
+"2015_agents" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct u.id) as agents
+
+
+from reservations r 
+join audits a on a.auditable_id = r.id and a.auditable_type = 'Reservation' and a.action = 'create'
+join users u on u.id = a.user_id and u.role in ('experience_manager', 'operator','operator_2')
+
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1
+),
+
+"2016_agents" as (
+  
+select 
+to_char(pickup_date, 'Month') as month
+,count(distinct u.id) as agents
+
+
+from reservations r 
+join audits a on a.auditable_id = r.id and a.auditable_type = 'Reservation' and a.action = 'create'
+join users u on u.id = a.user_id and u.role in ('experience_manager', 'operator','operator_2')
+
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1
+),
+
+"2015_areas" as (
+
+select 
+
+to_char(pickup_date, 'Month') as month
+,count(distinct service_area_id) as areas
+
+from reservations 
+
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1
+),
+
+"2016_areas" as (
+
+select 
+
+to_char(pickup_date, 'Month') as month
+,count(distinct service_area_id) as areas
+
+from reservations 
+
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1
+),
+
+"2015_ven_case" as (
+  
+select 
+
+to_char(pickup_date, 'Month') as month
+,count(distinct r.id) as case
+
+from reservations r
+join reservation_cases rc on rc.reservation_id = r.id and vendor_fault = 't'
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1 
+),
+
+"2016_ven_case" as (
+  
+select 
+
+to_char(pickup_date, 'Month') as month
+,count(distinct r.id) as case
+
+from reservations r
+join reservation_cases rc on rc.reservation_id = r.id and vendor_fault = 't'
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1 
+),
+
+"2015_sav_case" as (
+  
+select 
+
+to_char(pickup_date, 'Month') as month
+,count(distinct r.id) as case
+
+from reservations r
+join reservation_cases rc on rc.reservation_id = r.id and savoya_fault = 't'
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1 
+),
+
+"2016_sav_case" as (
+  
+select 
+
+to_char(pickup_date, 'Month') as month
+,count(distinct r.id) as case
+
+from reservations r
+join reservation_cases rc on rc.reservation_id = r.id and savoya_fault = 't'
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1 
+),
+
+"2015_comp" as (
+  
+select 
+
+to_char(pickup_date, 'Month') as month
+,(sum(client_amount) + sum(amount))/100 as comp
+
+from reservations r
+left join compensations c on c.reservation_id = r.id
+left join refunds rf on rf.reservation_id = r.id
+where to_char(pickup_date, 'yyyy') = '2015'
+
+group by 1 
+),
+
+"2016_comp" as (
+  
+select 
+
+to_char(pickup_date, 'Month') as month
+,(sum(client_amount) + sum(amount))/100 as comp
+
+from reservations r
+left join compensations c on c.reservation_id = r.id
+left join refunds rf on rf.reservation_id = r.id
+where to_char(pickup_date, 'yyyy') = '2016'
+
+group by 1 
+)
+  
+select 
+
+distinct
+ to_char ( r.pickup_date, 'Month') as Month
+,to_char ( r.pickup_date, 'MM') as MonNum
+,r1.trips as "2015 Trip Count"
+,r2.trips as "2016 Trip Count"
+,rc1.charge/100 as "2015 Trip Charge"
+,rc2.charge/100 as "2016 Trip Charge"
+,rc1.cost/100 as "2015 Trip Cost"
+,rc2.cost/100 as "2016 Trip Cost"
+,null as "2015 Profit"
+,null as "2016 Profit"
+,g1.trips as "2015 Group Trip Count"
+,g2.trips as "2016 Group Trip Count"
+,rp1.pax as "2015 Passenger Count"
+,rp2.pax as "2016 Passenger Count"
+,v1.sedan as "2015 Sedan Trips"
+,v2.sedan as "2016 Sedan Trips"
+,v1.SUV as "2015 SUV Trips"
+,v2.SUV as "2016 SUV Trips"
+,v1.van as "2015 Van Trips"
+,v2.van as "2016 Van Trips"
+,v1.bus as "2015 Bus Trips"
+,v2.bus as "2016 Bus Trips"
+,v1.spc as "2015 Specialty Trips"
+,v2.spc as "2016 Specialty Trips"
+,v1.greet as "2015 Greeter Trips"
+,v2.greet as "2016 Greeter Trips"
+,v1.ada as "2015 ADA Trips"
+,v2.ada as "2016 ADA Trips"
+,i1.trips as "2015 International Trips"
+,i2.trips as "2016 International Trips"
+,c1.companies as "2015 Company Count"
+,c2.companies as "2016 Company Count"
+,tc1.tcs as "2015 TC Count"
+,tc2.tcs as "2016 TC Count"
+,a1.agents as "2015 Active Agent Count"
+,a2.agents as "2016 Active Agent Count"
+,vd1.vendors as "2015 Active Vendor Count"
+,vd2.vendors as "2016 Active Vendor Count"
+,ar1.areas as "2015 Service Area Count"
+,ar2.areas as "2016 Service Area Count"
+,sc1.case as "2015 Savoya Case Count"
+,sc2.case as "2016 Savoya Case Count"
+,vc1.case as "2015 Vendor Case Count"
+,vc2.case as "2016 Vendor Case Count"
+,null as "2015 Savoya Case Percentage"
+,null as "2016 Savoya Case Percentage"
+,null as "2015 Vendor Case Percentage"
+,null as "2016 Vendor Case Percentage"
+,cp1.comp as "2015 Compensation"
+,cp2.comp as "2016 Compensation"
+,null as "2015 Booked Trips"
+,null as "2016 Booked Trips"
+
+from reservations r
+
+--join reservation_statuses rs on r.id = rs.reservation_id and canceled = 'f'
+left join "2015_rez_count" r1 on r1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_rez_count" r2 on r2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_group_count" g1 on g1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_group_count" g2 on g2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_rez_cost" rc1 on rc1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_rez_cost" rc2 on rc2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_pax_count" rp1 on rp1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_pax_count" rp2 on rp2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_Veh" v1 on v1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_Veh" v2 on v2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_int_rez" i1 on i1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_int_rez" i2 on i2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_companies" c1 on c1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_companies" c2 on c2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_tc" tc1 on tc1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_tc" tc2 on tc2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_vendors" vd1 on vd1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_vendors" vd2 on vd2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_agents" a1 on a1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_agents" a2 on a2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_areas" ar1 on ar1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_areas" ar2 on ar2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_ven_case" vc1 on vc1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_ven_case" vc2 on vc2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_sav_case" sc1 on sc1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_sav_case" sc2 on sc2.Month = to_char ( r.pickup_date, 'Month')
+
+left join "2015_comp" cp1 on cp1.Month = to_char ( r.pickup_date, 'Month')
+left join "2016_comp" cp2 on cp2.Month = to_char ( r.pickup_date, 'Month')
+
+join reservation_statuses rs on rs.reservation_id = r.id and rs.canceled = 'f'
+
+order by 2
