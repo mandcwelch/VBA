@@ -1,0 +1,290 @@
+--no_cache
+
+with rez_count as (
+  select 
+  c.id as id
+  ,count(r.id) as trips
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                           and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  where [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  
+  group by 1
+  
+  ),
+
+event as (
+  
+    select 
+  c.id as id
+  ,count(r.id) as trips
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                             and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  join groups g on g.id = r.group_id and g.onsite_program_coordinator_required = 't' 
+                                     and (board_meeting = 'f' or board_meeting is null)
+  
+    where [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  
+  group by 1
+ 
+  ),
+
+meeting as (
+      
+  select 
+  c.id as id
+  ,count(r.id) as trips
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                             and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  join groups g on g.id = r.group_id and (g.onsite_program_coordinator_required = 'f' or    
+                                          g.onsite_program_coordinator_required is null)
+                                     
+    where [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  
+  group by 1
+
+),
+
+transient as (
+      
+  select 
+  c.id as id
+  ,count(r.id) as trips
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                             and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+
+                                     
+    where [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016' and r.group_id is null
+  
+  group by 1
+
+),
+
+commercial as (
+  select 
+  c.id as id
+  ,count(r.id) as trips
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                             and status in ('billable', 'finalized')
+                                                           
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  where r.id in (select 
+                 distinct
+                 r.id 
+                 from reservations r
+                 join stops s on s.reservation_id = r.id
+                 join flights f on f.stop_id = s.id and (f.private = 'f' or f.private is null))
+  
+    and [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  group by 1
+  
+  ),
+
+privat as (
+  select 
+  c.id as id
+  ,count(r.id) as trips
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                             and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  where r.id in (select 
+                 distinct
+                 r.id 
+                 from reservations r
+                 join stops s on s.reservation_id = r.id
+                 join flights f on f.stop_id = s.id and f.private = 't')
+  
+    and [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  group by 1
+  
+  ),
+
+charge as (
+  select 
+  c.id as id
+  ,sum(r.final_amount)-sum(coalesce(rf.amount,0)) as amount
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                           and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  left join refunds rf on rf.reservation_id = r.id
+  
+  where [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  
+  group by 1
+  
+  ),
+
+cost as (
+  select 
+  c.id as id
+  ,sum(r.calculated_total_cost) as amount
+
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and (rs.canceled ='f' or rs.canceled is null)
+                                                           and status in ('billable', 'finalized')
+  
+  join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+  join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+  join companies c on c.id = tc.company_id
+  
+  left join refunds rf on rf.reservation_id = r.id
+  
+  where [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  
+  group by 1
+  
+  ),
+
+tc_count as (
+  
+  select 
+  
+  count(tc.id) as tcs
+  ,c.id as id
+  
+  from companies c
+  join travel_coordination_profiles tc on tc.company_id = c.id and (tc.inactive = 'f' or tc.inactive is null)
+  
+  group by 2
+  ),
+
+group_count as (
+  
+  select 
+  count(g.id) as groups
+  ,tc.company_id as id 
+  
+  from groups g 
+  join travel_coordination_profiles tc on tc.id = g.travel_coordination_profile_id
+  where g.status in ('assigned', 'invoiced', 'completed', 'contracted') 
+  and g.start_date between '1/1/2016' and '11/30/2016'
+  group by 2
+  
+  ),
+
+todo_count as (
+  
+  select 
+  
+   count(td.id) as todo
+  ,c.id as id 
+  
+  from companies c 
+  
+  join travel_coordination_profiles tc on tc.company_id = c.id
+  join travel_coordination_profile_assignments tcp on tc.id = tcp.travel_coordination_profile_id
+  join reservations r on r.id = tcp.reservation_id and [r.pickup_date:hcst] between '1/1/2016' and '11/30/2016'
+  join todos td on td.entity_id = r.id and td.resolved = 't'
+  
+  group by 2
+  
+  )
+
+Select
+
+ c.name as "Company"
+,'Team' || ' ' || t.name as "Team"
+,r.trips as "Reservations"
+,e.trips as "Event Reservations"
+,m.trips as "Meeting Reservations"
+,p.trips as "Private Flight Reservations"
+,cm.trips as "Commercial Flight Reservations"
+,tr.trips as "Transient Reservations"
+,ch.amount/100.00 as "Total Charge"
+,co.amount/100.00 as "Total Vendor Cost"
+,(ch.amount-co.amount)/100.00 as "Total Profit"
+,tc.tcs as "TC Count"
+,gc.groups as "Group Count"
+,td.todo as "Todo Count"
+
+from companies c
+
+left join teams t on t.id = c.team_id
+
+left join rez_count r on r.id = c.id
+
+left join event e on e.id = c.id
+
+left join meeting m on m.id = c.id
+  
+left join privat p on p.id = c.id
+  
+left join commercial cm on cm.id = c.id
+
+left join transient tr on tr.id = c.id
+
+left join charge ch on ch.id = c.id
+
+left join cost co on co.id = c.id
+
+left join tc_count tc on tc.id = c.id
+
+left join group_count gc on gc.id =c.id
+
+left join todo_count td on td.id = c.id
+
+
+order by 3 desc nulls last
+
+
+/*Report Name: Team Usage
+
+* Based on billed trips from January 1-November 30, 2016 
+* Client Company 
+* Team they are assigned to 
+* Total Trip Count (excluding cancelled non-billable trips) 
+* Total Event Trips 
+* Total Meeting Trips 
+* Total Private Trips 
+* Total Commercial Trips 
+* Total Transient Trips 
+* Total Charge 
+* Total Cost 
+* Total Profit 
+* Total TC Profiles Associated to Company 
+* # of Group Profiles Associated to the Company (only include programs in contracted, assigned, prepared, completed, invoiced status - no lost/pricing sent/pricing started) 
+* # of To Dos Associated to Company */
