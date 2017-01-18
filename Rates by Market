@@ -1,0 +1,160 @@
+--select * from hourly_rates where start_date > '2016-12-20 00:00:00'
+
+select
+
+ null as company_id
+,t.amount as amount
+,'2017-1-01 00:00:00' as start_date
+,'2018-1-01 00:00:00' as end_date
+,p.id as primary_location_id
+,s.id as secondary_location_id
+,vehicle_type_id as vehicle_type_id
+,cancellation_hours as cancellation_hours
+
+from transfer_rates t
+
+
+
+join locations p on p.id = t.primary_location_id and
+
+p.type = 'Airport' and p.iata_code in (
+  
+  'ATL', 
+'BOS', 
+'ORD', 
+'CVG', 
+'CMH', 
+'DFW', 
+'DEN', 
+'HOU', 
+'IND', 
+'MCI', 
+'LAX', 
+'MIA', 
+'MSY', 
+'JFK', 
+'TEB', 
+'MCO', 
+'PHL', 
+'SLC', 
+'SAT', 
+'SAN', 
+'SFO', 
+'SEA', 
+'STL', 
+'DCA', 
+'PDK', 
+'BED', 
+'MDW', 
+'DAL', 
+'APA', 
+'IAH', 
+'VNY', 
+'FLL', 
+'LGA', 
+'HPN', 
+'PNE', 
+'SJC', 
+'IAD', 
+'EWR', 
+'OAK', 
+'BWI')
+
+join locations s on s.id = t.secondary_location_id and
+
+s.name in (
+
+'Atlanta', 
+'Boston', 
+'Chicago', 
+'Cincinnati', 
+'Columbus', 
+'Dallas', 
+'Denver', 
+'Houston', 
+'Indianapolis', 
+'Kansas City', 
+'Los Angeles', 
+'Miami', 
+'New Orleans', 
+'New York City', 
+'Orlando', 
+'Philadelphia', 
+'Salt Lake City', 
+'San Antonio', 
+'San Diego', 
+'San Francisco', 
+'Seattle', 
+'St. Louis', 
+'Washington, D.C.' 
+) 
+
+and s.type = 'City'
+
+and s.service_area_id in (
+
+select id from service_areas
+
+where name in (
+'Atlanta, GA', 
+'Boston, MA', 
+'Chicago, IL', 
+'Cincinnati, OH', 
+'Columbus, OH', 
+'Dallas/Fort Worth, TX', 
+'Denver, CO', 
+'Houston, TX', 
+'Indianapolis, IN', 
+'Kansas City, MO', 
+'Los Angeles, CA', 
+'Miami, FL', 
+'New Orleans, LA', 
+'New York, NY', 
+'New York, NY', 
+'Orlando, FL', 
+'Philadelphia, PA', 
+'Salt Lake City, UT', 
+'San Antonio, TX', 
+'San Diego, CA', 
+'San Francisco, CA', 
+'Seattle, WA', 
+'St. Louis, MO', 
+'Washington, DC', 
+'Atlanta, GA', 
+'Boston, MA', 
+'Chicago, IL', 
+'Dallas, TX', 
+'Denver, CO', 
+'Houston, TX', 
+'Los Angeles, CA', 
+'Miami, FL', 
+'New York, NY', 
+'New York City, NY', 
+'Philadelphia, PA', 
+'San Francisco, CA', 
+'Washington, DC', 
+'New York, NY', 
+'San Francisco, CA', 
+'Washington, D.C.')
+)
+
+where t.deleted_at is null and t.start_date > '2016-12-20 00:00:00' and t.vehicle_type_id = 1 and t.id <> 61303
+      and special_event = 'f'
+
+
+union
+
+select
+
+
+ null as company_id
+,20000 as amount
+,'2017-1-01 00:00:00' as start_date
+,'2018-1-01 00:00:00' as end_date
+,4655788 as primary_location_id
+,4646477 as secondary_location_id
+,1 as vehicle_type_id
+,2 as cancellation_hours
+
+
+--select * from transfer_rates where primary_location_id = 4655999 and secondary_location_id = 4645874
