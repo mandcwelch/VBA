@@ -1,0 +1,50 @@
+with grp_count as (
+  
+  select
+  
+  tc_id
+  ,count(distinct REZ_ID) as trips
+
+  from prod.rp__MS_RESERVATION
+  
+  
+   group by tc_id
+  
+  )
+  select 
+distinct
+ a.ACTOR_ID as "Group ID"
+,case when a.GROUP_STATUS = 3 then 'Lost'
+      when a.GROUP_STATUS = 4 then 'Completed'
+      when a.GROUP_STATUS = 7 then 'Invoice Sent'
+      when a.GROUP_STATUS = 8 then 'Invoice Paid'
+end as "Status"
+,a.first_name as "Group Name"
+,a.GROUP_PLANNER as "TC Name"
+,a.company_name as "Company Name"
+,a.metro_name as "Metro Name"
+,a.PROGRAM_START_DATE as "Start Date"
+,a.PROGRAM_END_DATE as "End Date"
+,g.trips as "Total Trips"
+,null as "VIP Count"
+,a.PROJECTED_NO_OF_PAX as "Projected No. of Pax"
+,case when GROUP_TYPE = 1  then 'Event'
+      when GROUP_TYPE = 9  then 'Meeting'
+      when GROUP_TYPE = 15 then 'Onsite Meeting'
+      end as "Type"
+, case when a.GRP_PLANNER_TYPE = 1 then 'Existing Planner'
+       when a.GRP_PLANNER_TYPE = 2 then 'Growing Planner'
+       when a.GRP_PLANNER_TYPE = 3 then 'New Planner'
+       when a.GRP_PLANNER_TYPE = 4 then 'New Account'
+        end as "Planner Type"
+
+
+ from prod.MS_ACTOR a
+
+ left join prod.RP__MS_RESERVATION r on a.ACTOR_ID = r.TC_ID
+ left join grp_count g on g.tc_id = a.ACTOR_ID
+
+ 
+
+where (to_char(START_DATE, 'mmyy') = '0116' or to_char(START_DATE, 'mmyy') = '0215') and a.GRP_PLANNER_TYPE is not null
+and a.GROUP_STATUS in (3,4,8,7) and a.GROUP_STATUS is not null
