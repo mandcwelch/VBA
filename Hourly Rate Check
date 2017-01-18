@@ -1,0 +1,70 @@
+--select * from hourly_rates where start_date > '2016-12-20 00:00:00'
+
+select
+
+ null as company_id
+,sa.id as service_area_id
+,'2017-1-01 00:00:00' as start_date
+,'2018-1-01 00:00:00' as end_date
+,amount as amount
+,vehicle_type_id as vehicle_type_id
+,minimum as minimum
+,cancellation_hours as cancellation_hours
+
+from hourly_rates h
+
+
+
+join service_areas sa on sa.id = h.service_area_id and sa.name in (
+'Atlanta, GA', 
+'Boston, MA', 
+'Chicago, IL', 
+'Cincinnati, OH', 
+'Columbus, OH', 
+'Dallas/Fort Worth, TX', 
+'Denver, CO', 
+'Houston, TX', 
+'Indianapolis, IN', 
+'Kansas City, MO', 
+'Los Angeles, CA', 
+'Miami, FL', 
+'New Orleans, LA', 
+'New York, NY', 
+'New York, NY', 
+'Orlando, FL', 
+'Philadelphia, PA', 
+'Salt Lake City, UT', 
+'San Antonio, TX', 
+'San Diego, CA', 
+'San Francisco, CA', 
+'Seattle, WA', 
+'St. Louis, MO', 
+'Washington, DC', 
+'Atlanta, GA', 
+'Boston, MA', 
+'Chicago, IL', 
+'Dallas, TX', 
+'Denver, CO', 
+'Houston, TX', 
+'Los Angeles, CA', 
+'Miami, FL', 
+'New York, NY', 
+'New York City, NY', 
+'Philadelphia, PA', 
+'San Francisco, CA', 
+'Washington, DC', 
+'New York, NY', 
+'San Francisco, CA', 
+'Washington, D.C.')
+
+where
+
+ h.deleted_at is null and h.start_date > '2016-12-20 00:00:00'
+and h.start_date < '2017-1-03 00:00:00' and h.vehicle_type_id in(1,2,3,4,5,8)
+and h.special_event = 'f' and cancellation_hours < 30
+
+order by 2,6
+
+/*
+select * from vehicle_types
+*/
