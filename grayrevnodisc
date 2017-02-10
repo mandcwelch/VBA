@@ -1,0 +1,138 @@
+--no_cache
+with reservation_time as (
+  
+
+select 
+r.id as reservation_id
+
+, max(dai.client_date) -max(dao.client_date) as "Time Actual"
+,extract(hours from (max(dai.client_date) -max(dao.client_date))) +
+    case
+    when extract(minutes from (max(dai.client_date) -max(dao.client_date))) > 0 and 
+      extract(minutes from (max(dai.client_date) -max(dao.client_date))) <= 15 then .25
+
+    when extract(minutes from (max(dai.client_date) -max(dao.client_date))) > 15 and 
+      extract(minutes from (max(dai.client_date) -max(dao.client_date))) <= 30 then .50
+
+    when extract(minutes from (max(dai.client_date) -max(dao.client_date))) > 30 and 
+      extract(minutes from (max(dai.client_date) -max(dao.client_date))) <= 45  then .75
+
+    when extract(minutes from (max(dai.client_date) -max(dao.client_date))) > 45 then 1
+
+    when extract(minutes from (max(dai.client_date) -max(dao.client_date))) = 0  then 0
+    end
+
+as "Time Rounded"
+
+from reservations r
+
+join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f' and status = 'finalized'
+
+left join date_adjustments dao on dao.reservation_id = r.id and dao.type = 'OutDateAdjustment'
+left join date_adjustments dai on dai.reservation_id = r.id and dai.type = 'InDateAdjustment'
+  
+  
+  group by 1
+  
+  ),
+
+adjusted_quote as (
+
+  select
+
+  id
+, type
+,rate_id
+, rate_type
+, case when rate_id = 404732 then 24300
+       when rate_id = 404733 then 17000
+       when rate_id = 404734 then 18300
+       when rate_id = 404735 then 18300
+       when rate_id = 164161 then 40900
+       when rate_id = 164162 then 22100
+       when rate_id = 167725 then 34400
+       when rate_id = 167726 then 24500
+       when rate_id = 167727 then 24500
+  else base_rate end as base_rate
+, discount_percentage
+, special_handling_percentage
+, cancellation_hours
+, reservation_id
+, minimum
+, quoted_time
+
+from quotes
+
+  ),
+
+
+
+reservation_base_charge as (
+  
+  select
+  r.id as reservation_id
+  ,case
+  when q.type = 'hourly' and rt."Time Rounded" <= minimum and r.service_area_id = 11142 and r.vehicle_type_id = 142 then (183.00) * q.minimum
+  when q.type = 'hourly' and rt."Time Rounded" <= minimum and r.service_area_id = 11098 and r.vehicle_type_id = 142 then (243.00) * q.minimum
+  when q.type = 'hourly' and rt."Time Rounded" <= minimum and r.service_area_id = 11144 and r.vehicle_type_id = 142 then (183.00) * q.minimum
+  when q.type = 'hourly' and rt."Time Rounded" <= minimum and r.service_area_id = 11240 and r.vehicle_type_id = 142 then (170.00) * q.minimum
+  when q.type = 'hourly' and rt."Time Rounded" <= minimum and r.service_area_id not in (11142,11098,11144,11240) then (q.base_rate/100.00) * q.minimum
+  
+  when q.type = 'hourly' and rt."Time Rounded" > minimum and r.service_area_id = 11142 and r.vehicle_type_id = 142 then (183.00) * rt."Time Rounded"
+    when q.type = 'hourly' and rt."Time Rounded" > minimum and r.service_area_id = 11098 and r.vehicle_type_id = 142 then (243.00) * rt."Time Rounded"
+    when q.type = 'hourly' and rt."Time Rounded" > minimum and r.service_area_id = 11144 and r.vehicle_type_id = 142 then (183.00) * rt."Time Rounded"
+    when q.type = 'hourly' and rt."Time Rounded" > minimum and r.service_area_id = 11240 and r.vehicle_type_id = 142 then (170.00) * rt."Time Rounded"
+  
+  when q.type = 'hourly' and rt."Time Rounded" > minimum  and r.service_area_id not in (11142,11098,11144,11240) then (q.base_rate/100.00) * rt."Time Rounded"
+  when q.type = 'transfer' then (q.base_rate/100.00)
+  end as Charge
+  
+  from reservations r 
+  join  adjusted_quote q on q.reservation_id = r.id
+  join reservation_time rt on rt.reservation_id = r.id
+  join reservation_statuses rs on rs.reservation_id = r.id and canceled = 'f' and status = 'finalized'
+
+  )
+  
+select
+
+sum(((rb.charge * (1 - (((0) - (q.special_handling_percentage))/10000.00)))
+ )) as "Total Charge"
+
+
+from reservations r
+
+join reservation_statuses rs on rs.reservation_id = r.id and status = 'finalized'
+join reservation_base_charge rb on r.id = rb.reservation_id
+join adjusted_quote q on q.reservation_id = r.id 
+
+join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id 
+join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id 
+                                     and tc.company_id in (10156792, 10192789, 10196029)
+
+
+
+where r.pickup_date between '5/31/16' and '1/1/17'
+
+/*
+
+select t.id, amount, end_date, l.name, l2.name, vt.name  from transfer_rates t
+
+
+
+left join locations l on l.id = primary_location_id
+left join locations l2 on l2.id = secondary_location_id
+left join vehicle_types vt on vt.id = t.vehicle_type_id
+
+where (primary_location_id in (
+
+select primary_location_id from company_transfer_rates ct
+
+where ct.company_id in (10156792, 10192789, 10196029)) 
+
+or secondary_location_id in (
+
+  select primary_location_id from company_transfer_rates ct
+
+where ct.company_id in (10156792, 10192789, 10196029)) )
+and deleted_at is null*/
