@@ -2,41 +2,33 @@
 
 ---total reservations ---
 
-with total_trips as (
+with short_rez as (
   
   select 
+  distinct
+    r.id
+  , r.pickup_date
+  , r.created_at
+  , va.vendor_id
   
-  v.id as id
-  ,count(distinct r.id) as trips
+  from reservations r
+  join reservation_statuses rs on rs.reservation_id = r.id and rs.canceled is not true 
+                                                           and rs.status in ('billed', 'finalized', 'completed')
+  join vendor_assignments va on va.reservation_id = r.id and va.current is true
   
-  from vendors v
-  
-  join vendor_assignments va on va.vendor_id = v.id and va.current = 't'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-       and rs.status in ('billed', 'finalized', 'completed')
-  join reservations r on va.reservation_id = r.id 
-       and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
-                                                         
- where v.vendor_type = 'garage'
-group by 1                          
-  
-  ), 
+  ),
 
-tot_trips as (
+total_trips as (
   
   select 
   
-  r.id as id
+    r.vendor_id as id
+  , count(distinct r.id) as trips
   
-  from vendors v
-  
-  join vendor_assignments va on va.vendor_id = v.id and va.current = 't'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-       and rs.status in ('billed', 'finalized', 'completed')
-  join reservations r on va.reservation_id = r.id 
-                                                         
- where v.vendor_type = 'garage'
-                          
+  from short_rez r 
+        
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))                                                         
+  group by 1                          
   
   ),
 
@@ -44,19 +36,13 @@ total_trips_last_month as (
   
   select 
   
-  v.id as id
-  ,count(distinct r.id) as trips
+    r.vendor_id as id
+  , count(distinct r.id) as trips
   
-  from vendors v
-  
-  join vendor_assignments va on va.vendor_id = v.id and va.current = 't'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-         and rs.status in ('billed', 'finalized', 'completed')
-  join reservations r on va.reservation_id = r.id 
-       and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
-                                                         
- where v.vendor_type = 'garage'
-group by 1                          
+  from short_rez r 
+        
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))                                                         
+  group by 1                        
   
   ),
 
@@ -64,18 +50,14 @@ total_trips_2016 as (
   
   select 
   
-  v.id as id
-  ,count(distinct r.id) as trips
+    r.vendor_id as id
+  , count(distinct r.id) as trips
   
-  from vendors v
+  from short_rez r
   
-  join vendor_assignments va on va.vendor_id = v.id and va.current = 't'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-         and rs.status in ('billed', 'finalized', 'completed')
-  join reservations r on va.reservation_id = r.id and to_char(r.pickup_date, 'yyyy') = '2016'
+  where to_char(r.pickup_date, 'yyyy') = '2016'
                                                          
- where v.vendor_type = 'garage'
-group by 1                          
+  group by 1                          
   
   ),
 
@@ -83,21 +65,16 @@ total_trips_2017 as (
   
   select 
   
-  v.id as id
+  r.vendor_id as id
   ,count(distinct r.id) as trips
   
-  from vendors v
+  from short_rez r 
   
-  join vendor_assignments va on va.vendor_id = v.id and va.current = 't'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-         and rs.status in ('billed', 'finalized', 'completed')
-  join reservations r on va.reservation_id = r.id and to_char(r.pickup_date, 'yyyy') = '2017'
+  where to_char(r.pickup_date, 'yyyy') = '2017'
                                                          
- where v.vendor_type = 'garage'
-group by 1                          
+  group by 1                          
   
   ),
-
 
 --- vendor case totals ---
 
@@ -105,18 +82,15 @@ Vendor_cases as (
   
   select 
   
-  va.vendor_id as id
-  ,count(distinct va.reservation_id) as trips
+    r.vendor_id as id
+  , count(distinct r.id) as trips
   
-  from vendor_assignments va
+  from short_rez r
   
-  join reservation_cases rc on rc.reservation_id = va.reservation_id and rc.vendor_fault = 't'
-  join reservations r on r.id = va.reservation_id   
-       and r.id in (select id from tot_trips)
-       and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
+  join reservation_cases rc on rc.reservation_id = r.id and rc.vendor_fault = 't'
   
-  where va.current = 't'
-  
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
+
   group by 1
   
   ),
@@ -126,18 +100,15 @@ Vendor_cases_last_month as (
   
   select 
   
-  va.vendor_id as id
-  ,count(distinct va.reservation_id) as trips
+    r.vendor_id as id
+  , count(distinct r.id) as trips
   
-  from vendor_assignments va
+  from short_rez r
   
-  join reservation_cases rc on rc.reservation_id = va.reservation_id and rc.vendor_fault = 't'
-  join reservations r on r.id = va.reservation_id 
-       and r.id in (select id from tot_trips)
-       and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
+  join reservation_cases rc on rc.reservation_id = r.id and rc.vendor_fault = 't'
   
-  where va.current = 't'
-  
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
+
   group by 1
   
   ),
@@ -147,16 +118,14 @@ Vendor_cases_2016 as (
   
   select 
   
-  va.vendor_id as id
-  ,count(distinct va.reservation_id) as trips
+    r.vendor_id as id
+  , count(distinct r.id) as trips
   
-  from vendor_assignments va
+  from short_rez r
   
-  join reservation_cases rc on rc.reservation_id = va.reservation_id and rc.vendor_fault = 't'
-  join reservations r on r.id = va.reservation_id and  to_char(r.pickup_date, 'yyyy') = '2016'
-       and r.id in (select id from tot_trips)
-  
-  where va.current = 't'
+  join reservation_cases rc on rc.reservation_id = r.id and rc.vendor_fault = 't'
+ 
+  where to_char(r.pickup_date, 'yyyy') = '2016'
   
   group by 1
   
@@ -166,16 +135,14 @@ Vendor_cases_2017 as (
   
   select 
   
-  va.vendor_id as id
-  ,count(distinct va.reservation_id) as trips
+  r.vendor_id as id
+  ,count(distinct r.id) as trips
   
-  from vendor_assignments va
+  from short_rez r
   
-  join reservation_cases rc on rc.reservation_id = va.reservation_id and rc.vendor_fault = 't'
-  join reservations r on r.id = va.reservation_id and  to_char(r.pickup_date, 'yyyy') = '2017'
-       and r.id in (select id from tot_trips)
-  
-  where va.current = 't'
+  join reservation_cases rc on rc.reservation_id = r.id and rc.vendor_fault = 't'
+ 
+  where to_char(r.pickup_date, 'yyyy') = '2017'
   
   group by 1
   
@@ -183,41 +150,47 @@ Vendor_cases_2017 as (
 
  --- Core managed trips ---
 
+last_action as (
+  select 
+
+  max(re.id) as id
+, action
+, reservation_id
+
+from reservation_events re 
+
+where re.action in ('drop_passenger', 'confirm_garage', 'pickup_passenger', 'assign_driver', 'complete_trip', 'closeout')
+group by 2,3
+  
+  ),
+
+checked_rez as (
+
+select 
+
+reservation_id
+, count(a.id) as total
+
+from last_action l
+
+left join audits a on a.auditable_id = l.id and a.auditable_type = 'ReservationEvent' 
+and (a.user_id in (select user_id from vendor_users) or a.user_id in (select id from users where role = 'driver')) 
+group by 1
+  
+  ),
+
 tot_rez as (
+
+select 
+
+  reservation_id as id
+, r.pickup_date
+, r.vendor_id  
+  from checked_rez c
   
-  select distinct
+  join short_rez r on r.id = c.reservation_id
   
-  r.id
-  ,r.pickup_date
-  from reservations r 
-  
-join reservation_statuses rs on rs.reservation_id = r.id and rs.canceled is not true and rs.status = 'finalized'
-
-join reservation_events re on re.reservation_id = r.id and re.action = 'drop_passenger'
-join audits a on a.auditable_id = re.id and a.audited_changes ilike '%drop_passenger%'
-and (a.user_id in (select user_id from vendor_users) or a.user_id in (select id from users where role = 'driver'))
-
-join reservation_events re1 on re1.reservation_id = r.id and re1.action = 'confirm_garage'
-join audits a1 on a1.auditable_id = re1.id and a1.audited_changes ilike '%confirm_garage%'
-    and (a1.user_id in (select user_id from vendor_users) or a1.user_id in (select id from users where role = 'driver'))
-
-/*join reservation_events re2 on re2.reservation_id = r.id and re2.action = 'driver_onsite'
-join audits a2 on a2.auditable_id = re2.id and a2.audited_changes ilike '%driver_onsite%'
-    and (a2.user_id in (select user_id from vendor_users) or a2.user_id in (select id from users where role = 'driver'))
-*/
-join reservation_events re3 on re3.reservation_id = r.id and re3.action = 'pickup_passenger'
-join audits a3 on a3.auditable_id = re3.id and a3.audited_changes ilike '%pickup_passenger%'
-    and (a3.user_id in (select user_id from vendor_users) or a3.user_id in (select id from users where role = 'driver'))
-
-join reservation_events re4 on re4.reservation_id = r.id and re4.action = 'assign_driver'
-join audits a4 on a4.auditable_id = re4.id and a4.audited_changes ilike '%assign_driver%'
-    and (a4.user_id in (select user_id from vendor_users) or a4.user_id in (select id from users where role = 'driver'))
-
-join reservation_events re5 on re5.reservation_id = r.id and re5.action = 'complete_trip'
-join audits a5 on a5.auditable_id = re5.id and a5.audited_changes ilike '%complete_trip%'
-    and (a5.user_id in (select user_id from vendor_users) or a5.user_id in (select id from users where role = 'driver'))
-
-where r.id in (select id from tot_trips)
+  where total = 6
   
 ),
 
@@ -225,15 +198,13 @@ full_portal as (
   
 select 
 
-va.vendor_id as id
+r.vendor_id as id
 ,count(distinct r.id) as trips
 
+from tot_rez r  
 
-from vendor_assignments va 
-join tot_rez r on r.id = va.reservation_id
-     and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
-where va.current = 't'
-  
+where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
+
 group by 1
 
   ),
@@ -242,14 +213,12 @@ full_portal_last_month as (
   
 select 
 
-va.vendor_id as id
+r.vendor_id as id
 ,count(distinct r.id) as trips
 
-
-from vendor_assignments va 
-join tot_rez r on r.id = va.reservation_id
-     and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
-where va.current = 't'
+from tot_rez r 
+     
+where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
   
 group by 1
 
@@ -259,15 +228,13 @@ full_portal_2016 as (
   
 select 
 
-va.vendor_id as id
+r.vendor_id as id
 ,count(distinct r.id) as trips
 
-
-from vendor_assignments va 
-join tot_rez r on r.id = va.reservation_id
-     and  to_char(r.pickup_date, 'yyyy') = '2016'
-where va.current = 't'
+from tot_rez r 
   
+where to_char(r.pickup_date, 'yyyy') = '2016'
+
 group by 1
 
   ),
@@ -276,21 +243,17 @@ group by 1
   
 select 
 
-va.vendor_id as id
+r.vendor_id as id
 ,count(distinct r.id) as trips
 
-
-from vendor_assignments va 
-join tot_rez r on r.id = va.reservation_id
-     and  to_char(r.pickup_date, 'yyyy') = '2017'
-where va.current = 't'
+from tot_rez r 
   
+where to_char(r.pickup_date, 'yyyy') = '2017'
+
 group by 1
 
   ),
-    
-    
-    
+     
 
 --- drivre assignment time ---
 last_assign as (
@@ -308,88 +271,75 @@ last_assign as (
   ),
 
 driver_assign as (
-select 
 
-va.vendor_id as id
-,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
-,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps
-  
+  select 
 
-from vendor_assignments va 
-join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-join reservation_statuses rs on rs.reservation_id = r.id and canceled is not true
-join last_assign la on la.id=r.id
+  r.vendor_id as id
+  ,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
+  ,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps  
+
+  from short_rez r 
+  join last_assign la on la.id=r.id
 
 
-where va.current = 't' and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
-
-
-  
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 1 month'))
   
   group by 1
 
   ),
 
 driver_assign_last_month as (
-select 
+  
+  select 
 
-va.vendor_id as id
-,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
-,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps
+  r.vendor_id as id
+  ,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
+  ,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps  
 
-from vendor_assignments va 
-join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-join reservation_statuses rs on rs.reservation_id = r.id and canceled is not true
-join last_assign la on la.id=r.id
+  from short_rez r 
+  join last_assign la on la.id=r.id
 
 
-where va.current = 't' and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
-
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval ' 2 month'))
   
   group by 1
 
   ),
   
 driver_assign_2017 as (
-select 
 
-va.vendor_id as id
-,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
-,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps
+  select 
 
-from vendor_assignments va 
-join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-join reservation_statuses rs on rs.reservation_id = r.id and canceled is not true
-join last_assign la on la.id=r.id
+ r.vendor_id as id
+ ,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
+ ,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps
+
+ from short_rez r 
+ join last_assign la on la.id=r.id
 
 
-where va.current = 't' and  to_char(r.pickup_date, 'yyyy') = '2017'
+ where to_char(r.pickup_date, 'yyyy') = '2017'
 
-  group by 1
+ group by 1
 
 ),
 
 
 driver_assign_2016 as (
-select 
+  
+  select 
 
-va.vendor_id as id
-,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
-,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps
+ r.vendor_id as id
+ ,count(case when r.pickup_date - la.updated_at > '06:00:00' then 1 end) as trips
+ ,coalesce(Count(case when r.pickup_date - r.created_at < '06:00:00' then 1 end),0) as asaps
 
-from vendor_assignments va 
-join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-join reservation_statuses rs on rs.reservation_id = r.id and canceled is not true
-join last_assign la on la.id=r.id
+ from short_rez r 
+ join last_assign la on la.id=r.id
 
 
-where va.current = 't' and  to_char(r.pickup_date, 'yyyy') = '2016'
+ where to_char(r.pickup_date, 'yyyy') = '2016'
 
-  group by 1
+ group by 1
 
 ),
 
@@ -398,18 +348,13 @@ where va.current = 't' and  to_char(r.pickup_date, 'yyyy') = '2016'
 driver_app as (
   
   select
-  v.id
+  r.vendor_id as id
   ,count(distinct r.id) as trips
   
- from vendor_assignments va
-  join vendors v on v.id = va.vendor_id and v.mobile_enabled is true and v.vendor_type = 'garage'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id 
-       and rs.status in ('billed','paid','billable','finalized')
-  join reservations r on rs.reservation_id = r.id 
-       and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '1 month'))
-       and r.id in (select id from tot_trips)
+ from short_rez r
+  join vendors v on r.vendor_id = v.id and v.mobile_enabled is true       
   join reservation_events enr on r.id = enr.reservation_id and action in ('en_route')
-where va.current is true
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '1 month'))
          
   group by 1
   ),
@@ -417,18 +362,13 @@ where va.current is true
 driver_app_last_month as (
   
   select
-  v.id
+  r.vendor_id as id
   ,count(distinct r.id) as trips
   
- from vendor_assignments va
-  join vendors v on v.id = va.vendor_id and v.mobile_enabled is true and v.vendor_type = 'garage'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id 
-       and rs.status in ('billed','paid','billable','finalized')
-  join reservations r on rs.reservation_id = r.id 
-       and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '2 month'))
-       and r.id in (select id from tot_trips)
+ from short_rez r
+  join vendors v on r.vendor_id = v.id and v.mobile_enabled is true       
   join reservation_events enr on r.id = enr.reservation_id and action in ('en_route')
-where va.current is true
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '2 month'))
          
   group by 1
   ),
@@ -436,17 +376,13 @@ where va.current is true
 driver_app_2016 as (
   
   select
-  v.id
+  r.vendor_id as id
   ,count(distinct r.id) as trips
   
- from vendor_assignments va
-  join vendors v on v.id = va.vendor_id and v.mobile_enabled is true and v.vendor_type = 'garage'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id 
-       and rs.status in ('billed','paid','billable','finalized')
-  join reservations r on rs.reservation_id = r.id and to_char(r.pickup_date, 'yyyy') = '2016'
-       and r.id in (select id from tot_trips)
+ from short_rez r
+  join vendors v on r.vendor_id = v.id and v.mobile_enabled is true       
   join reservation_events enr on r.id = enr.reservation_id and action in ('en_route')
-where va.current is true
+  where to_char(r.pickup_date, 'yyyy') = '2016'
          
   group by 1
   ),
@@ -455,17 +391,13 @@ where va.current is true
 driver_app_2017 as (
   
   select
-  v.id
+  r.vendor_id as id
   ,count(distinct r.id) as trips
   
- from vendor_assignments va
-  join vendors v on v.id = va.vendor_id and v.mobile_enabled is true and v.vendor_type = 'garage'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id 
-       and rs.status in ('billed','paid','billable','finalized')
-  join reservations r on rs.reservation_id = r.id and to_char(r.pickup_date, 'yyyy') = '2017'
-       and r.id in (select id from tot_trips)
+ from short_rez r
+  join vendors v on r.vendor_id = v.id and v.mobile_enabled is true       
   join reservation_events enr on r.id = enr.reservation_id and action in ('en_route')
-where va.current is true
+  where to_char(r.pickup_date, 'yyyy') = '2017'
          
   group by 1
   ),
@@ -476,45 +408,35 @@ portal as (
   
   select 
   
-  va.vendor_id as id
+  r.vendor_id as id
   ,count(distinct re.reservation_id) as trips
   
-  from vendor_assignments va 
+  from short_rez r
   
-  join reservation_events re on re.reservation_id = va.reservation_id and re.action = 'closeout'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled = 'f'
-  join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-  join audits a on a.auditable_id = re.id  
-    and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '1 month'))
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id   and a.auditable_type = 'ReservationEvent'
     and (a.user_id in (select user_id from vendor_users) or a.user_id in (select id from users where role = 'driver'))
 
-  
-  where current = 't' 
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '1 month'))
   
    group by 1
   
 ),
 
 portal_last_month as (
-  
+
   select 
   
-  va.vendor_id as id
+  r.vendor_id as id
   ,count(distinct re.reservation_id) as trips
   
-  from vendor_assignments va 
+  from short_rez r
   
-  join reservation_events re on re.reservation_id = va.reservation_id and re.action = 'closeout'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-  join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-  join audits a on a.auditable_id = re.id  
-    and date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '2 month'))
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id   and a.auditable_type = 'ReservationEvent'
     and (a.user_id in (select user_id from vendor_users) or a.user_id in (select id from users where role = 'driver'))
 
-  
-  where current = 't' 
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '2 month'))
   
    group by 1
   
@@ -524,21 +446,16 @@ portal_2016 as (
   
   select 
   
-  va.vendor_id as id
+  r.vendor_id as id
   ,count(distinct re.reservation_id) as trips
   
-  from vendor_assignments va 
+  from short_rez r
   
-  join reservation_events re on re.reservation_id = va.reservation_id and re.action = 'closeout'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-  join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-  join audits a on a.auditable_id = re.id  
-    and to_char(r.pickup_date, 'yyyy') = '2016'
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id  and a.auditable_type = 'ReservationEvent' 
     and (a.user_id in (select user_id from vendor_users) or a.user_id in (select id from users where role = 'driver'))
 
-  
-  where current = 't' 
+  where to_char(r.pickup_date, 'yyyy') = '2016'
   
    group by 1
   
@@ -548,21 +465,16 @@ portal_2017 as (
   
   select 
   
-  va.vendor_id as id
+  r.vendor_id as id
   ,count(distinct re.reservation_id) as trips
   
-  from vendor_assignments va 
+  from short_rez r
   
-  join reservation_events re on re.reservation_id = va.reservation_id and re.action = 'closeout'
-  join reservation_statuses rs on rs.reservation_id = va.reservation_id and canceled is not true
-  join reservations r on r.id = va.reservation_id
-       and r.id in (select id from tot_trips)
-  join audits a on a.auditable_id = re.id  
-    and to_char(r.pickup_date, 'yyyy') = '2017'
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id and a.auditable_type = 'ReservationEvent'  
     and (a.user_id in (select user_id from vendor_users) or a.user_id in (select id from users where role = 'driver'))
 
-  
-  where current = 't' 
+  where to_char(r.pickup_date, 'yyyy') = '2017'
   
    group by 1
   
@@ -571,84 +483,76 @@ portal_2017 as (
 auto as (
   
   select 
+  
+  r.vendor_id as id
+  ,count(distinct re.reservation_id) as trips
+  
+  from short_rez r
+  
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id and a.auditable_type = 'ReservationEvent'
+    and a.user_id is null
 
-va.vendor_id as id
-,count(distinct r.id) as trips
-
-from reservations r
-
-join vendor_assignments va on va.reservation_id = r. id and va.current = 't'
-join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
-join audits a on a.auditable_id = re.id and a.audited_changes ilike '%closeout%' 
-     and a.user_id is null
-
-where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '1 month'))
-       and r.id in (select id from tot_trips)
-
-group by 1
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '1 month'))
+  
+   group by 1
   
   ),
 
 auto_last_month as (
   
   select 
+  
+  r.vendor_id as id
+  ,count(distinct re.reservation_id) as trips
+  
+  from short_rez r
+  
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id and a.auditable_type = 'ReservationEvent'
+    and a.user_id is null
 
-va.vendor_id as id
-,count(distinct r.id) as trips
-
-from reservations r
-
-join vendor_assignments va on va.reservation_id = r. id and va.current = 't'
-join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
-join audits a on a.auditable_id = re.id and a.audited_changes ilike '%closeout%' 
-     and a.user_id is null
-
-where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '2 month'))
-       and r.id in (select id from tot_trips)
-
-group by 1
+  where date_trunc('month',r.pickup_date) = date_trunc('month',(current_date - interval '2 month'))
+  
+   group by 1
   
   ),
 
 auto_2016 as (
   
   select 
+  
+  r.vendor_id as id
+  ,count(distinct re.reservation_id) as trips
+  
+  from short_rez r
+  
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id and a.auditable_type = 'ReservationEvent'
+    and a.user_id is null
 
-va.vendor_id as id
-,count(distinct r.id) as trips
-
-from reservations r
-
-join vendor_assignments va on va.reservation_id = r. id and va.current = 't'
-join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
-join audits a on a.auditable_id = re.id and a.audited_changes ilike '%closeout%' 
-     and a.user_id is null
-
-where to_char(r.pickup_date, 'yyyy') = '2016'
-       and r.id in (select id from tot_trips)
-
-group by 1
+  where to_char(r.pickup_date, 'yyyy') = '2016'
+  
+   group by 1
   
   ),
 
 auto_2017 as (
   
   select 
+  
+  r.vendor_id as id
+  ,count(distinct re.reservation_id) as trips
+  
+  from short_rez r
+  
+  join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
+  join audits a on a.auditable_id = re.id and a.auditable_type = 'ReservationEvent'
+    and a.user_id is null
 
-va.vendor_id as id
-,count(distinct r.id) as trips
-
-from reservations r
-
-join vendor_assignments va on va.reservation_id = r. id and va.current = 't'
-join reservation_events re on re.reservation_id = r.id and re.action = 'closeout'
-join audits a on a.auditable_id = re.id and a.audited_changes ilike '%closeout%' 
-     and a.user_id is null
-
-where to_char(r.pickup_date, 'yyyy') = '2017'
-       and r.id in (select id from tot_trips)
-
-group by 1
+  where to_char(r.pickup_date, 'yyyy') = '2016'
+  
+   group by 1
   
   )
 
@@ -763,8 +667,11 @@ left join auto_2017 sy on sy.id = v.id
   
 
 
-where v.vendor_type = 'garage' and v.inactive = 'f' and left(v.name, 6) <> 'Savoya' and v.id not in (21110)
+where v.vendor_type = 'garage' and v.inactive is not true 
+                               and left(v.name, 6) <> 'Savoya' 
+                               and v.id not in (21110) 
+                               and left(v.name, 3) <> 'I/O'  
 
-order by 5 desc nulls last
+order by 4 desc nulls last
 
 limit 100
