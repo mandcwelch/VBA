@@ -1,0 +1,458 @@
+--no_cache
+
+with todo as (
+
+  select 
+  
+    user_id as id  
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where resolved = 't' and [resolved_at=daterange]
+
+  group by 1
+  
+),
+
+tot_todo as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where resolved = 't' 
+  and [resolved_at=daterange]
+
+),
+
+onsites as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'OnsiteCallTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_onsite as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'OnsiteCallTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+driver_assign as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'AssignDriverTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_driver as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'AssignDriverTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+
+),
+
+crossroads as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'CheckCrossroadsTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_crossroads as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'CheckCrossroadsTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+
+),
+
+Outcall as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'OutcallTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_outcall as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'OutcallTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+
+),
+
+zendesk as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'ZendeskTicketTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_zendesk as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'ZendeskTicketTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+mod as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'ModificationConfirmationTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_mod as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'ModificationConfirmationTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+cancel as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'ConfirmCancellationTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_cancel as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'ConfirmCancellationTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+mia as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'MiaTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_mia as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'MiaTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+vendor_assign as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'VendorAssignmentConfirmationTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_vendor_assign as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'VendorAssignmentConfirmationTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+pob as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'PassengerOnboardTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_pob as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'PassengerOnboardTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+),
+
+prep as (
+  
+  select 
+  
+    user_id as id
+  , count(distinct t.id) as todo
+
+  from todos t
+
+  where type = 'PrepCallTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+  group by 1
+  
+  ),
+
+tot_prep as (
+
+  select 
+  
+  count(distinct t.id) as todo
+
+  from todos t
+
+  join users u on u.id = t.user_id and u.team_id = 1 and u.role <> 'manager'
+
+  where type = 'PrepCallTodo' 
+  and [resolved_at=daterange] 
+  and resolved = 't'
+
+)
+  
+select 
+
+  u.first_name || ' ' || u.last_name as "Agent" 
+, u.id
+, t.todo as "Todo Count"
+, t.todo*1.0/(select * from tot_todo)*1.0 as "Team Percentage"
+, o.todo as "Onsite Todos"
+, o.todo*1.0/(select * from tot_onsite)*1.0 as "Onsite Percentage"
+, d.todo as "Driver Assign"
+, d.todo*1.0/(select * from tot_driver)*1.0 as "Driver Assign Percentage"
+, c.todo as "Crossroad Orders"
+, c.todo*1.0/(select * from tot_crossroads)*1.0 as "Crossroad Percentage"
+--, z.todo as "Zendesk"
+--, z.todo*1.0/(select * from tot_zendesk)*1.0 as "Zendesk Percentage"
+, m.todo as "Modifications"
+, m.todo*1.0/(select * from tot_mod)*1.0 as "Modification Percentage"
+, cl.todo as "Cancellation Assign"
+, cl.todo*1.0/(select * from tot_cancel)*1.0 as "Cancelation Percentage"
+, mia.todo as "Missing Passenger"
+, mia.todo*1.0/(select * from tot_mia)*1.0 as "MIA Percentage"
+, va.todo as "Vendor Assignment"
+, va.todo*1.0/(select * from tot_vendor_assign)*1.0 as "Vendor Assignment Percentage"
+, pob.todo as "Passenger Onboard"
+, pob.todo*1.0/(select * from tot_pob)*1.0 as "Onboard Percentage"
+, p.todo as "Prep Calls"
+, p.todo*1.0/(select * from tot_prep)*1.0 as "OPrep Call Percentage"
+
+
+from users u
+
+left join todo t on t.id = u.id
+
+left join onsites o on o.id = u.id
+
+left join driver_assign d on d.id = u.id
+
+left join crossroads c on c.id = u.id
+
+left join outcall oc on oc.id = u.id
+
+--left join zendesk z on z.id = u.id
+
+left join mod m on m.id = u.id
+
+left join cancel cl on cl.id = u.id
+
+left join mia on mia.id = u.id
+
+left join vendor_assign va on va.id = u.id
+
+left join pob on pob.id = u.id
+
+left join prep p on p.id = u.id
+
+where u.team_id = 1 and u.role <> 'manager' and u.id <> 28054
+
+
+/*
+select distinct type from todos
+*/
