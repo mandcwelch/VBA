@@ -1,0 +1,31 @@
+--no_cache
+
+select 
+
+ count(distinct lt.id) as "Late Onsites"
+,count(distinct t.id) as "Onsites"
+,count(distinct lt.id)*1.0/count(distinct t.id)*1.0 as Percentage
+,to_char([pickup_date:hcst:aggregation], 'mm/dd/yyyy hh24mi') as "Time Segment"
+
+from todos t
+
+join reservations r on r.id = t.entity_id and [r.pickup_date=daterange]
+
+left join todos lt on lt.entity_id = r.id
+          and lt.type = 'OnsiteCallTodo' 
+          and [lt.resolved_at:hcst] > [pickup_date:hcst]           
+          and lt.entity_id not in ( select 
+                                   reservation_id 
+                                   from reservation_cases)
+
+--join users u on u.id = t.user_id and u.team_id = 1
+
+/*join travel_coordination_profile_assignments tcp on tcp.reservation_id = r.id
+join travel_coordination_profiles tc on tc.id = tcp.travel_coordination_profile_id
+join companies c on c.id = tc.company_id and c.team_id = 1*/
+
+where  t.type = 'OnsiteCallTodo' and [pickup_date=daterange] and t.user_id in (select id from users where team_id = 1)
+
+group by 4
+
+order by 4 desc
