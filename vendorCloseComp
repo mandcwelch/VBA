@@ -39,3 +39,52 @@ where re.action = 'closeout' and [re.updated_at=daterange] and re.updated_at is 
 -- and re.reservation_id not in (select reservation_id from accounting_holds)
     )
 select * from sa_time union select * from non_sa_time union all select * from all_time order by 3
+
+
+--no_cache
+select 
+'SA Vendors' as vendors
+, count(re.id) as trips
+, (to_char(avg(re.updated_at - re2.updated_at), 'dd')::numeric * 24 
+ + to_char(avg(re.updated_at - re2.updated_at), 'hh24')::numeric)::varchar 
+ || ':' ||to_char(avg(re.updated_at - re2.updated_at), 'mi') as average 
+
+from reservation_events re 
+join reservation_events re2 on re2.reservation_id = re.reservation_id and re2.action = 'complete_trip'
+join vendor_assignments va on va.reservation_id = re.reservation_id and current is true
+join vendors  v on va.vendor_id = v.id and v.under_service_agreement is true
+
+where re.action = 'closeout' and [re.updated_at=daterange] and re.updated_at is not null
+
+union
+
+select 
+'Non-SA Vendors' as vendors
+, count(re.id) as trips
+, (to_char(avg(re.updated_at - re2.updated_at), 'dd')::numeric * 24 
+ + to_char(avg(re.updated_at - re2.updated_at), 'hh24')::numeric)::varchar 
+ || ':' ||to_char(avg(re.updated_at - re2.updated_at), 'mi') as average
+
+from reservation_events re 
+join reservation_events re2 on re2.reservation_id = re.reservation_id and re2.action = 'complete_trip'
+join vendor_assignments va on va.reservation_id = re.reservation_id and current is true
+join vendors  v on va.vendor_id = v.id and v.under_service_agreement is not true
+
+where re.action = 'closeout' and [re.updated_at=daterange] and re.updated_at is not null
+
+union
+
+select 
+'All Vendors' as vendors
+, count(re.id) as trips
+, (to_char(avg(re.updated_at - re2.updated_at), 'dd')::numeric * 24 
+ + to_char(avg(re.updated_at - re2.updated_at), 'hh24')::numeric)::varchar 
+ || ':' ||to_char(avg(re.updated_at - re2.updated_at), 'mi') as average
+
+from reservation_events re 
+join reservation_events re2 on re2.reservation_id = re.reservation_id and re2.action = 'complete_trip'
+join vendor_assignments va on va.reservation_id = re.reservation_id and current is true
+
+where re.action = 'closeout' and [re.updated_at=daterange] and re.updated_at is not null
+
+order by 1 desc
