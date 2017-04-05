@@ -1,0 +1,43 @@
+--no_cache
+
+select
+
+  c.name as company 
+, case when c.team_id = 1 then 'Team Echo'
+       when c.team_id = 2 then 'Team Kilo'
+       when c.team_id = 3 then 'Team Foxtrot'
+       end as "Team"
+, count(distinct r.id) as "Reservations"
+, count(distinct(case when g.passenger_count > 149 then r.id end)) as "Event Reservations"
+, count(distinct(case when g.passenger_count > 0 and g.passenger_count < 150 then  r.id end)) as "Meeting Reservations"
+, count(distinct(case when r.group_id is null and (fp.private is true or fd.private is true) 
+                      then  r.id end)) as "Private Flight Reservation"
+, count(distinct(case when r.group_id is null and (fp.private is not true and fd.private is not true) 
+                      and (fp.id is not null or fd.id is not null) then r.id end)) as "Commercial Reservation"
+, count(distinct(case when r.group_id is null and fp.id is null and fd.id is null then r.id end)) 
+                      as "Transient Reservation"
+, sum(rm.charge) as "Total Charge"
+, sum(rm.cost) as "Total Vendor Cost"
+, sum(rm.charge) - sum(rm.cost) as "Total Profit"
+, count(distinct tc.id) as "TC Count"
+, count(distinct g.id) as "Group Count"
+--, count(distinct t.id) as "Todo Count"
+        
+from companies c
+        
+join travel_coordination_profiles tc on tc.company_id = c.id
+join travel_coordination_profile_assignments tcpa on tcpa.travel_coordination_profile_id = tc.id
+join reservations r on r.id = tcpa.reservation_id
+join rp_res_margins rm on rm.reservation_id = r.id
+left join groups g on g.id = r.group_id
+left join stops sp on sp.reservation_id = r.id and sp.location_type in ('pickup_location')
+left join stops sd on sd.reservation_id = r.id and sd.location_type in ('dropoff_location')
+left join flights fp on fp.stop_id = sp.id
+left join flights fd on fd.stop_id = sd.id
+--left join todos t on t.entity_id = r.id or t.entity_id = r.group_id   
+
+where [r.pickup_date=daterange]
+
+group by 1,2
+
+order by 3 desc
