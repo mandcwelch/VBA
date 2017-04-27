@@ -1,7 +1,0 @@
-select first_name  + ' ' +  last_name as Name, count(entity_type) as Todo_Count from todos as t
-left join users as u on t.user_id = u.id
-
-where [resolved_at = daterange] 
-and last_name <> ''
-group by Name
-order by Todo_count desc
